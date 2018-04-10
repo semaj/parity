@@ -925,11 +925,6 @@ impl Debug for SessionImpl {
 
 fn check_cluster_nodes(self_node_id: &NodeId, nodes: &BTreeSet<NodeId>) -> Result<(), Error> {
 	assert!(nodes.contains(self_node_id));
-	/*// this node must be a part of cluster
-	if !nodes.contains(self_node_id) {
-		return Err(Error::InvalidNodesConfiguration);
-	}*/
-
 	Ok(())
 }
 
@@ -1090,21 +1085,6 @@ pub mod tests {
 		let l = MessageLoop::new(1);
 		assert!(l.master().initialize(Default::default(), Default::default(), false, 0, l.nodes.keys().cloned().collect::<BTreeSet<_>>().into()).is_ok());
 	}
-
-	/*#[test]
-	fn fails_to_initialize_if_not_a_part_of_cluster() {
-		let node_id = math::generate_random_point().unwrap();
-		let cluster = Arc::new(DummyCluster::new(node_id.clone()));
-		let session = SessionImpl::new(SessionParams {
-			id: SessionId::default(),
-			self_node_id: node_id.clone(),
-			key_storage: Some(Arc::new(DummyKeyStorage::default())),
-			cluster: cluster,
-			nonce: Some(0),
-		});
-		let cluster_nodes: BTreeSet<_> = (0..2).map(|_| math::generate_random_point().unwrap()).collect();
-		assert_eq!(session.initialize(Default::default(), Default::default(), false, 0, cluster_nodes.into()).unwrap_err(), Error::InvalidNodesConfiguration);
-	}*/
 
 	#[test]
 	fn fails_to_initialize_if_threshold_is_wrong() {
