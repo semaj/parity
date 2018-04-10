@@ -573,6 +573,12 @@ mod tests {
 	}
 
 	#[test]
+	fn consensus_sessions_fails_with_temp_error_if_node_error_received_by_uninitialized_slave_from_master() {
+		let mut session = make_slave_consensus_session(0, None);
+		assert_eq!(session.on_node_error(&NodeId::from(1), Error::NodeDisconnected).unwrap_err(), Error::ConsensusTemporaryUnreachable);
+	}
+
+	#[test]
 	fn consensus_session_continues_if_node_error_received_by_master_during_establish_and_enough_nodes_left() {
 		let mut session = make_master_consensus_session(1, None, None);
 		session.initialize(vec![NodeId::from(1), NodeId::from(2), NodeId::from(3)].into_iter().collect()).unwrap();

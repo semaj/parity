@@ -628,4 +628,34 @@ pub mod tests {
 		assert_eq!(job.state(), JobSessionState::Active);
 		assert!(job.transport().is_empty_response());
 	}
+
+	#[test]
+	fn job_fails_with_temp_error_if_more_than_half_nodes_respond_with_temp_error() {
+		let mut job = JobSession::new(make_master_session_meta(2), SquaredSumJobExecutor, DummyJobTransport::default());
+		job.initialize(vec![Public::from(1), Public::from(2), Public::from(3), Public::from(4)].into_iter().collect(), None, false).unwrap();
+		job.on_node_error(&NodeId::from(2), Error::NodeDisconnected).unwrap();
+		assert_eq!(job.on_node_error(&NodeId::from(3), Error::NodeDisconnected).unwrap_err(), Error::ConsensusTemporaryUnreachable);
+	}
+
+	#[test]
+	fn job_fails_with_temp_error_if_more_than_half_rejects_are_temp() {
+		let mut job = JobSession::new(make_master_session_meta(2), SquaredSumJobExecutor, DummyJobTransport::default());
+		job.initialize(vec![Public::from(1), Public::from(2), Public::from(3), Public::from(4)].into_iter().collect(), None, false).unwrap();
+		job.on_node_error(&NodeId::from(2), Error::NodeDisconnected).unwrap();
+		assert_eq!(job.on_node_error(&NodeId::from(3), Error::NodeDisconnected).unwrap_err(), Error::ConsensusTemporaryUnreachable);
+	}
+
+	#[test]
+	fn job_fails_if_more_than_half_rejects_are_non_temp() {
+		let mut job = JobSession::new(make_master_session_meta(2), SquaredSumJobExecutor, DummyJobTransport::default());
+		job.initialize(vec![Public::from(1), Public::from(2), Public::from(3), Public::from(4)].into_iter().collect(), None, false).unwrap();
+		job.on_node_error(&NodeId::from(2), Error::AccessDenied).unwrap();
+		assert_eq!(job.on_node_error(&NodeId::from(3), Error::AccessDenied).unwrap_err(), Error::ConsensusUnreachable);
+	}
+
+	#[test]
+	fn job_fails_with_temp_error_when_temp_error_is_reported_by_master_node() {
+		let mut job = JobSession::new(make_slave_session_meta(2), SquaredSumJobExecutor, DummyJobTransport::default());
+		assert_eq!(job.on_node_error(&NodeId::from(1), Error::NodeDisconnected).unwrap_err(), Error::ConsensusTemporaryUnreachable);
+	}
 }

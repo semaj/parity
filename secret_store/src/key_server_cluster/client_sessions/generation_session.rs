@@ -1168,24 +1168,6 @@ pub mod tests {
 		assert!(l.master().derived_point().unwrap() != passed_point.into());
 	}
 
-	/*#[test]
-	fn fails_to_complete_initialization_if_not_a_part_of_cluster() {
-		let (sid, m, _, l) = make_simple_cluster(0, 2).unwrap();
-		let mut nodes = BTreeMap::new();
-		nodes.insert(m, math::generate_random_scalar().unwrap());
-		nodes.insert(math::generate_random_point().unwrap(), math::generate_random_scalar().unwrap());
-		assert_eq!(l.first_slave().on_initialize_session(m, &message::InitializeSession {
-			session: sid.into(),
-			session_nonce: 0,
-			origin: None,
-			author: Address::default().into(),
-			nodes: nodes.into_iter().map(|(k, v)| (k.into(), v.into())).collect(),
-			is_zero: false,
-			threshold: 0,
-			derived_point: math::generate_random_point().unwrap().into(),
-		}).unwrap_err(), Error::InvalidNodesConfiguration);
-	}*/
-
 	#[test]
 	fn fails_to_complete_initialization_if_threshold_is_wrong() {
 		let (sid, m, s, l) = make_simple_cluster(0, 2).unwrap();
