@@ -49,6 +49,10 @@ pub struct SessionMeta {
 	pub self_node_id: NodeId,
 	/// Session threshold.
 	pub threshold: usize,
+	/// Count of all configured key server nodes (valid at session start time).
+	pub configured_nodes_count: usize,
+	/// Count of all connected key server nodes (valid at session start time).
+	pub connected_nodes_count: usize,
 }
 
 mod admin_sessions;

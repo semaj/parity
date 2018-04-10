@@ -563,7 +563,7 @@ impl SessionImpl {
 
 		match {
 			match node {
-				Some(node) => data.consensus_session.on_node_error(node),
+				Some(node) => data.consensus_session.on_node_error(node, error.clone()),
 				None => data.consensus_session.on_session_timeout(),
 			}
 		} {
@@ -716,6 +716,14 @@ impl Cluster for SessionKeyGenerationTransport {
 	fn nodes(&self) -> BTreeSet<NodeId> {
 		self.cluster.nodes()
 	}
+
+	fn configured_nodes_count(&self) -> usize {
+		self.cluster.configured_nodes_count()
+	}
+
+	fn connected_nodes_count(&self) -> usize {
+		self.cluster.connected_nodes_count()
+	}
 }
 
 impl SessionCore {
@@ -850,6 +858,8 @@ mod tests {
 						self_node_id: gl_node_id.clone(),
 						master_node_id: master_node_id.clone(),
 						threshold: gl_node.key_storage.get(&session_id).unwrap().unwrap().threshold,
+						configured_nodes_count: gl.nodes.len(),
+						connected_nodes_count: gl.nodes.len(),
 					},
 					access_key: "834cb736f02d9c968dfaf0c37658a1d86ff140554fc8b59c9fdad5a8cf810eec".parse().unwrap(),
 					key_share: Some(gl_node.key_storage.get(&session_id).unwrap().unwrap()),
@@ -970,6 +980,8 @@ mod tests {
 				self_node_id: self_node_id.clone(),
 				master_node_id: self_node_id.clone(),
 				threshold: 0,
+				configured_nodes_count: 1,
+				connected_nodes_count: 1,
 			},
 			access_key: Random.generate().unwrap().secret().clone(),
 			key_share: Some(DocumentKeyShare {
@@ -1002,6 +1014,8 @@ mod tests {
 				self_node_id: self_node_id.clone(),
 				master_node_id: self_node_id.clone(),
 				threshold: 0,
+				configured_nodes_count: 1,
+				connected_nodes_count: 1,
 			},
 			access_key: Random.generate().unwrap().secret().clone(),
 			key_share: None,
@@ -1024,6 +1038,8 @@ mod tests {
 				self_node_id: self_node_id.clone(),
 				master_node_id: self_node_id.clone(),
 				threshold: 2,
+				configured_nodes_count: 1,
+				connected_nodes_count: 1,
 			},
 			access_key: Random.generate().unwrap().secret().clone(),
 			key_share: Some(DocumentKeyShare {

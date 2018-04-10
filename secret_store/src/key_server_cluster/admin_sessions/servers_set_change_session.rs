@@ -422,6 +422,8 @@ impl SessionImpl {
 						id: key_id.clone(),
 						self_node_id: self.core.meta.self_node_id.clone(),
 						master_node_id: sender.clone(),
+						configured_nodes_count: self.core.meta.configured_nodes_count,
+						connected_nodes_count: self.core.meta.connected_nodes_count,
 					},
 					sub_session: message.sub_session.clone().into(),
 					key_share: key_share,
@@ -708,6 +710,8 @@ impl SessionImpl {
 				id: key_id,
 				self_node_id: core.meta.self_node_id.clone(),
 				master_node_id: master_node_id,
+				configured_nodes_count: core.meta.configured_nodes_count,
+				connected_nodes_count: core.meta.connected_nodes_count,
 			},
 			cluster: core.cluster.clone(),
 			key_storage: core.key_storage.clone(),
@@ -736,6 +740,8 @@ impl SessionImpl {
 						id: key_id,
 						self_node_id: core.meta.self_node_id.clone(),
 						master_node_id: core.meta.self_node_id.clone(),
+						configured_nodes_count: core.meta.configured_nodes_count,
+						connected_nodes_count: core.meta.connected_nodes_count,
 					},
 					sub_session: math::generate_random_scalar()?,
 					key_share: key_share,
@@ -1097,6 +1103,8 @@ pub mod tests {
 				self_node_id: master_node_id.clone(),
 				master_node_id: master_node_id.clone(),
 				id: SessionId::default(),
+				configured_nodes_count: all_nodes_set.len(),
+				connected_nodes_count: all_nodes_set.len(),
 			};
 
 			let old_nodes = gml.nodes.into_iter().map(|n| create_node(meta.clone(), admin_public.clone(), all_nodes_set.clone(), n.1));

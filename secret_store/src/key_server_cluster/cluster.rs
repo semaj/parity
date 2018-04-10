@@ -109,6 +109,10 @@ pub trait Cluster: Send + Sync {
 	fn is_connected(&self, node: &NodeId) -> bool;
 	/// Get a set of connected nodes.
 	fn nodes(&self) -> BTreeSet<NodeId>;
+	/// Get total count of configured key server nodes (valid at the time of ClusterView creation).
+	fn configured_nodes_count(&self) -> usize;
+	/// Get total count of connected key server nodes (valid at the time of ClusterView creation).
+	fn connected_nodes_count(&self) -> usize;
 }
 
 /// Cluster initialization parameters.
@@ -160,6 +164,8 @@ pub struct ClusterClientImpl {
 /// Network cluster view. It is a communication channel, required in single session.
 pub struct ClusterView {
 	core: Arc<Mutex<ClusterViewCore>>,
+	configured_nodes_count: usize,
+	connected_nodes_count: usize,
 }
 
 /// Cross-thread shareable cluster data.
@@ -835,8 +841,10 @@ impl Connection {
 }
 
 impl ClusterView {
-	pub fn new(cluster: Arc<ClusterData>, nodes: BTreeSet<NodeId>) -> Self {
+	pub fn new(cluster: Arc<ClusterData>, nodes: BTreeSet<NodeId>, configured_nodes_count: usize) -> Self {
 		ClusterView {
+			configured_nodes_count: configured_nodes_count,
+			connected_nodes_count: nodes.len(),
 			core: Arc::new(Mutex::new(ClusterViewCore {
 				cluster: cluster,
 				nodes: nodes,
@@ -870,6 +878,14 @@ impl Cluster for ClusterView {
 
 	fn nodes(&self) -> BTreeSet<NodeId> {
 		self.core.lock().nodes.clone()
+	}
+
+	fn configured_nodes_count(&self) -> usize {
+		self.configured_nodes_count
+	}
+
+	fn connected_nodes_count(&self) -> usize {
+		self.connected_nodes_count
 	}
 }
 
@@ -1196,6 +1212,14 @@ pub mod tests {
 
 		fn nodes(&self) -> BTreeSet<NodeId> {
 			self.data.lock().nodes.iter().cloned().collect()
+		}
+
+		fn configured_nodes_count(&self) -> usize {
+			self.data.lock().nodes.len()
+		}
+
+		fn connected_nodes_count(&self) -> usize {
+			self.data.lock().nodes.len()
 		}
 	}
 

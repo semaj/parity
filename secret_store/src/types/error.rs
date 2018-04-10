@@ -58,9 +58,14 @@ pub enum Error {
 	Io(String),
 	/// Deserialization error has occured.
 	Serde(String),
-	/// Consensus is temporary unreachable.
+	/// Consensus is temporary unreachable. Means that something is currently blocking us from either forming
+	/// consensus group (like disconnecting from too many nodes, which are AGREE to partticipate in consensus)
+	/// or from rejecting request (disconnecting from AccessDenied-nodes).
 	ConsensusTemporaryUnreachable,
-	/// Consensus is unreachable.
+	/// Consensus is unreachable. It doesn't mean that it will ALWAYS remain unreachable, but right NOW we have
+	/// enough nodes confirmed that they do not want to be a part of consensus. Example: we're connected to 10
+	/// of 100 nodes. Key threshold is 6 (i.e. 7 nodes are required for consensus). 4 nodes are responding with
+	/// reject => consensus is considered unreachable, even though another 90 nodes still can respond with OK.
 	ConsensusUnreachable,
 	/// Acl storage error.
 	AccessDenied,

@@ -563,7 +563,7 @@ impl SessionImpl {
 
 		match {
 			match node {
-				Some(node) => data.consensus_session.on_node_error(node),
+				Some(node) => data.consensus_session.on_node_error(node, error.clone()),
 				None => data.consensus_session.on_session_timeout(),
 			}
 		} {
@@ -636,6 +636,8 @@ impl SessionImpl {
 			master_node_id: core.meta.self_node_id.clone(),
 			self_node_id: core.meta.self_node_id.clone(),
 			threshold: core.meta.threshold,
+			configured_nodes_count: core.meta.configured_nodes_count,
+			connected_nodes_count: core.meta.connected_nodes_count,
 		}, job, transport);
 		job_session.initialize(consensus_group, self_response, core.meta.self_node_id != core.meta.master_node_id)?;
 		data.broadcast_job_session = Some(job_session);
@@ -880,6 +882,8 @@ mod tests {
 				self_node_id: id_numbers.iter().nth(i).clone().unwrap().0,
 				master_node_id: id_numbers.iter().nth(0).clone().unwrap().0,
 				threshold: encrypted_datas[i].threshold,
+				configured_nodes_count: 5,
+				connected_nodes_count: 5,
 			},
 			access_key: access_key.clone(),
 			key_share: Some(encrypted_datas[i].clone()),
@@ -943,6 +947,8 @@ mod tests {
 				self_node_id: self_node_id.clone(),
 				master_node_id: self_node_id.clone(),
 				threshold: 0,
+				configured_nodes_count: 1,
+				connected_nodes_count: 1,
 			},
 			access_key: Random.generate().unwrap().secret().clone(),
 			key_share: Some(DocumentKeyShare {
@@ -975,6 +981,8 @@ mod tests {
 				self_node_id: self_node_id.clone(),
 				master_node_id: self_node_id.clone(),
 				threshold: 0,
+				configured_nodes_count: 1,
+				connected_nodes_count: 1,
 			},
 			access_key: Random.generate().unwrap().secret().clone(),
 			key_share: None,
@@ -997,6 +1005,8 @@ mod tests {
 				self_node_id: self_node_id.clone(),
 				master_node_id: self_node_id.clone(),
 				threshold: 2,
+				configured_nodes_count: 1,
+				connected_nodes_count: 1,
 			},
 			access_key: Random.generate().unwrap().secret().clone(),
 			key_share: Some(DocumentKeyShare {
@@ -1130,7 +1140,7 @@ mod tests {
 		let (_, _, _, sessions) = prepare_decryption_sessions();
 		assert!(sessions[0].decrypted_secret().is_none());
 		sessions[0].on_session_timeout();
-		assert_eq!(sessions[0].decrypted_secret().unwrap().unwrap_err(), Error::ConsensusUnreachable);
+		assert_eq!(sessions[0].decrypted_secret().unwrap().unwrap_err(), Error::ConsensusTemporaryUnreachable);
 	}
 
 	#[test]
@@ -1140,7 +1150,7 @@ mod tests {
 
 		// 1 node disconnects => we still can recover secret
 		sessions[0].on_node_timeout(sessions[1].node());
-		assert!(sessions[0].data.lock().consensus_session.consensus_job().rejects().contains(sessions[1].node()));
+		assert!(sessions[0].data.lock().consensus_session.consensus_job().rejects().contains_key(sessions[1].node()));
 		assert!(sessions[0].state() == ConsensusSessionState::EstablishingConsensus);
 
 		// 2 node are disconnected => we can not recover secret
@@ -1207,7 +1217,7 @@ mod tests {
 		let disconnected = sessions[0].data.lock().consensus_session.computation_job().requests().iter().cloned().nth(0).unwrap();
 		sessions[0].on_node_timeout(&disconnected);
 		assert_eq!(sessions[0].state(), ConsensusSessionState::EstablishingConsensus);
-		assert!(sessions[0].data.lock().consensus_session.computation_job().rejects().contains(&disconnected));
+		assert!(sessions[0].data.lock().consensus_session.computation_job().rejects().contains_key(&disconnected));
 		assert!(!sessions[0].data.lock().consensus_session.computation_job().requests().contains(&disconnected));
 	}
 

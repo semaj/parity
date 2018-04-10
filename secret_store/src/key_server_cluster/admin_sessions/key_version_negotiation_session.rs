@@ -143,6 +143,10 @@ pub struct FastestResultComputer {
 	self_node_id: NodeId,
 	/// Threshold (if known).
 	threshold: Option<usize>,
+	/// Count of all configured key server nodes.
+	configured_nodes_count: usize,
+	/// Count of all connected key server nodes.
+	connected_nodes_count: usize,
 }
 
 /// Selects version with most support, waiting for responses from all nodes.
@@ -431,11 +435,13 @@ impl SessionTransport for IsolatedSessionTransport {
 }
 
 impl FastestResultComputer {
-	pub fn new(self_node_id: NodeId, key_share: Option<&DocumentKeyShare>) -> Self {
+	pub fn new(self_node_id: NodeId, key_share: Option<&DocumentKeyShare>, configured_nodes_count: usize, connected_nodes_count: usize) -> Self {
 		let threshold = key_share.map(|ks| ks.threshold);
 		FastestResultComputer {
 			self_node_id: self_node_id,
 			threshold: threshold,
+			configured_nodes_count: configured_nodes_count,
+			connected_nodes_count: connected_nodes_count,
 		}
 	}}
 
@@ -459,7 +465,12 @@ impl SessionResultComputer for FastestResultComputer {
 						.find(|&(_, ref n)| n.len() >= threshold + 1)
 						.map(|(version, nodes)| Ok((version.clone(), nodes.iter().cloned().nth(0)
 							.expect("version is only inserted when there's at least one owner; qed"))))
-						.unwrap_or_else(|| Err(Error::ConsensusUnreachable))),
+						.unwrap_or_else(|| Err(if self.configured_nodes_count == self.connected_nodes_count
+							|| self.configured_nodes_count < threshold + 1 {
+							Error::ConsensusUnreachable
+						} else {
+							Error::ConsensusTemporaryUnreachable
+						}))),
 				}
 			},
 			// if we do not have share, then wait for all confirmations
@@ -469,7 +480,11 @@ impl SessionResultComputer for FastestResultComputer {
 				.max_by_key(|&(_, ref n)| n.len())
 				.map(|(version, nodes)| Ok((version.clone(), nodes.iter().cloned().nth(0)
 					.expect("version is only inserted when there's at least one owner; qed"))))
-				.unwrap_or_else(|| Err(Error::ConsensusUnreachable))),
+				.unwrap_or_else(|| Err(if self.configured_nodes_count == self.connected_nodes_count {
+					Error::ConsensusUnreachable
+				} else {
+					Error::ConsensusTemporaryUnreachable
+				}))),
 		}
 	}
 }
@@ -552,12 +567,15 @@ mod tests {
 								id: Default::default(),
 								self_node_id: node_id.clone(),
 								master_node_id: master_node_id.clone(),
+								configured_nodes_count: nodes.len(),
+								connected_nodes_count: nodes.len(),
 							},
 							sub_session: sub_sesion.clone(),
 							key_share: key_storage.get(&Default::default()).unwrap(),
 							result_computer: Arc::new(FastestResultComputer::new(
 								node_id.clone(),
 								key_storage.get(&Default::default()).unwrap().as_ref(),
+								nodes.len(), nodes.len()
 							)),
 							transport: DummyTransport {
 								cluster: cluster,
@@ -723,6 +741,8 @@ mod tests {
 		let computer = FastestResultComputer {
 			self_node_id: Default::default(),
 			threshold: None,
+			configured_nodes_count: 1,
+			connected_nodes_count: 1,
 		};
 		assert_eq!(computer.compute_result(Some(10), &Default::default(), &Default::default()), Some(Err(Error::ServerKeyIsNotFound)));
 	}

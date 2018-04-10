@@ -950,6 +950,8 @@ pub mod tests {
 				id: SessionId::default(),
 				self_node_id: NodeId::default(),
 				master_node_id: master_node_id,
+				configured_nodes_count: new_nodes_set.iter().chain(old_nodes_set.iter()).collect::<BTreeSet<_>>().len(),
+				connected_nodes_count: new_nodes_set.iter().chain(old_nodes_set.iter()).collect::<BTreeSet<_>>().len(),
 			};
 			let new_nodes = new_nodes_set.iter()
 				.filter(|n| !old_nodes_set.contains(&n))
@@ -990,6 +992,8 @@ pub mod tests {
 				id: SessionId::default(),
 				self_node_id: NodeId::default(),
 				master_node_id: master_node_id,
+				configured_nodes_count: new_nodes_set.iter().chain(ml.nodes.keys()).collect::<BTreeSet<_>>().len(),
+				connected_nodes_count: new_nodes_set.iter().chain(ml.nodes.keys()).collect::<BTreeSet<_>>().len(),
 			};
 			let old_nodes_set = ml.nodes.keys().cloned().collect();
 			let nodes = ml.nodes.iter()

@@ -187,6 +187,8 @@ impl SessionImpl {
 				master_node_id: params.meta.master_node_id,
 				self_node_id: params.meta.self_node_id,
 				threshold: params.meta.threshold * 2,
+				configured_nodes_count: params.meta.configured_nodes_count,
+				connected_nodes_count: params.meta.connected_nodes_count,
 			},
 			consensus_executor: match requester {
 				Some(requester) => KeyAccessJob::new_on_master(params.meta.id.clone(), params.acl_storage.clone(), requester),
@@ -743,7 +745,7 @@ impl SessionImpl {
 
 		match {
 			match node {
-				Some(node) => data.consensus_session.on_node_error(node),
+				Some(node) => data.consensus_session.on_node_error(node, error.clone()),
 				None => data.consensus_session.on_session_timeout(),
 			}
 		} {
@@ -969,6 +971,14 @@ impl<F> Cluster for NonceGenerationTransport<F> where F: Fn(SessionId, Secret, u
 	fn nodes(&self) -> BTreeSet<NodeId> {
 		self.cluster.nodes()
 	}
+
+	fn configured_nodes_count(&self) -> usize {
+		self.cluster.configured_nodes_count()
+	}
+
+	fn connected_nodes_count(&self) -> usize {
+		self.cluster.connected_nodes_count()
+	}
 }
 
 impl SessionCore {
@@ -1098,6 +1108,8 @@ mod tests {
 						self_node_id: gl_node_id.clone(),
 						master_node_id: master_node_id.clone(),
 						threshold: gl_node.key_storage.get(&session_id).unwrap().unwrap().threshold,
+						configured_nodes_count: gl.nodes.len(),
+						connected_nodes_count: gl.nodes.len(),
 					},
 					access_key: "834cb736f02d9c968dfaf0c37658a1d86ff140554fc8b59c9fdad5a8cf810eec".parse().unwrap(),
 					key_share: Some(gl_node.key_storage.get(&session_id).unwrap().unwrap()),
