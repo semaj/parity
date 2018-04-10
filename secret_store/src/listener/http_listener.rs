@@ -257,11 +257,13 @@ fn return_bytes<T: Serialize>(req: HttpRequest, mut res: HttpResponse, result: R
 
 fn return_error(mut res: HttpResponse, err: Error) {
 	match err {
-		Error::InsufficientRequesterData(_) => *res.status_mut() = HttpStatusCode::BadRequest,
-		Error::AccessDenied => *res.status_mut() = HttpStatusCode::Forbidden,
-		Error::ServerKeyIsNotFound | Error::DocumentKeyIsNotFound => *res.status_mut() = HttpStatusCode::NotFound,
-		Error::Hyper(_) => *res.status_mut() = HttpStatusCode::BadRequest,
-		Error::Serde(_) => *res.status_mut() = HttpStatusCode::BadRequest,
+		Error::AccessDenied | Error::ConsensusUnreachable | Error::ConsensusTemporaryUnreachable =>
+			*res.status_mut() = HttpStatusCode::Forbidden,
+		Error::ServerKeyIsNotFound | Error::DocumentKeyIsNotFound =>
+			*res.status_mut() = HttpStatusCode::NotFound,
+		Error::InsufficientRequesterData(_) | Error::Hyper(_) | Error::Serde(_)
+			| Error::DocumentKeyAlreadyStored | Error::ServerKeyAlreadyGenerated =>
+			*res.status_mut() = HttpStatusCode::BadRequest,
 		_ => *res.status_mut() = HttpStatusCode::InternalServerError,
 	}
 
