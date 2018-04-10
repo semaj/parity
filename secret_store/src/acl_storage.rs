@@ -21,7 +21,7 @@ use ethcore::client::{BlockId, ChainNotify, CallContract, RegistryInfo};
 use ethereum_types::{H256, Address};
 use bytes::Bytes;
 use trusted_client::TrustedClient;
-use types::all::{Error, ServerKeyId};
+use types::{Error, ServerKeyId};
 
 use_contract!(acl_storage, "AclStorage", "res/acl_storage.json");
 
@@ -62,7 +62,7 @@ impl OnChainAclStorage {
 			contract: Mutex::new(CachedContract::new(trusted_client)),
 		});
 		client
-			.ok_or(Error::Internal("Constructing OnChainAclStorage without active Client".into()))?
+			.ok_or_else(|| Error::Internal("Constructing OnChainAclStorage without active Client".into()))?
 			.add_notify(acl_storage.clone());
 		Ok(acl_storage)
 	}
@@ -112,7 +112,7 @@ impl CachedContract {
 					self.contract.functions()
 						.check_permissions()
 						.call(requester, document.clone(), &do_call)
-						.map_err(|e| Error::Internal(e.to_string()))
+						.map_err(|e| Error::Internal(format!("ACL checker call error: {}", e.to_string())))
 				},
 				None => Err(Error::Internal("ACL checker contract is not configured".to_owned())),
 			}

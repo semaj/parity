@@ -259,7 +259,7 @@ impl SessionImpl {
 		// check if version exists
 		let key_version = match self.core.key_share.as_ref() {
 			None => return Err(Error::InvalidMessage),
-			Some(key_share) => key_share.version(&version).map_err(|e| Error::KeyStorage(e.into()))?,
+			Some(key_share) => key_share.version(&version)?,
 		};
 
 		// select nodes to participate in consensus etablish session
@@ -386,8 +386,7 @@ impl SessionImpl {
 		let key_share = self.core.key_share.as_ref()
 			.expect("this is master node; master node is selected so that it has key version; qed");
 		let key_version = key_share.version(data.version.as_ref()
-			.expect("this is master node; master node is selected so that it has key version; qed")
-		).map_err(|e| Error::KeyStorage(e.into()))?;
+			.expect("this is master node; master node is selected so that it has key version; qed"))?;
 
 		let consensus_group = data.consensus_session.select_consensus_group()?.clone();
 		let mut other_consensus_group_nodes = consensus_group.clone();
@@ -680,7 +679,7 @@ impl SessionImpl {
 		let inv_nonce_share = data.inv_nonce_generation_session.as_ref().expect(nonce_exists_proof).joint_public_and_secret().expect(nonce_exists_proof)?.2;
 
 		let version = data.version.as_ref().ok_or(Error::InvalidMessage)?.clone();
-		let key_version = key_share.version(&version).map_err(|e| Error::KeyStorage(e.into()))?.hash.clone();
+		let key_version = key_share.version(&version)?.hash.clone();
 
 		let signing_job = EcdsaSigningJob::new_on_slave(key_share.clone(), key_version, sig_nonce_public, inv_nonce_share)?;
 		let signing_transport = self.core.signing_transport();
@@ -988,7 +987,7 @@ impl SessionCore {
 			Some(key_share) => key_share,
 		};
 
-		let key_version = key_share.version(version).map_err(|e| Error::KeyStorage(e.into()))?.hash.clone();
+		let key_version = key_share.version(version)?.hash.clone();
 		let signing_job = EcdsaSigningJob::new_on_master(key_share.clone(), key_version, nonce_public, inv_nonce_share, inversed_nonce_coeff, message_hash)?;
 		consensus_session.disseminate_jobs(signing_job, self.signing_transport(), false).map(|_| ())
 	}

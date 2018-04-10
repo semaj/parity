@@ -115,7 +115,7 @@ impl SessionCreatorCore {
 
 	/// Read key share && remove disconnected nodes.
 	fn read_key_share(&self, key_id: &SessionId) -> Result<Option<DocumentKeyShare>, Error> {
-		self.key_storage.get(key_id).map_err(|e| Error::KeyStorage(e.into()))
+		self.key_storage.get(key_id)
 	}
 }
 
@@ -146,7 +146,7 @@ impl ClusterSessionCreator<GenerationSessionImpl, ()> for GenerationSessionCreat
 	fn create(&self, cluster: Arc<Cluster>, master: NodeId, nonce: Option<u64>, id: SessionId, _creation_data: Option<()>) -> Result<Arc<GenerationSessionImpl>, Error> {
 		// check that there's no finished encryption session with the same id
 		if self.core.key_storage.contains(&id) {
-			return Err(Error::DuplicateSessionId);
+			return Err(Error::ServerKeyAlreadyGenerated);
 		}
 
 		let nonce = self.core.check_session_nonce(&master, nonce)?;

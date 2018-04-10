@@ -246,7 +246,7 @@ impl SessionImpl {
 		// check if version exists
 		let key_version = match self.core.key_share.as_ref() {
 			None => return Err(Error::InvalidMessage),
-			Some(key_share) => key_share.version(&version).map_err(|e| Error::KeyStorage(e.into()))?,
+			Some(key_share) => key_share.version(&version)?,
 		};
 
 		let mut data = self.data.lock();
@@ -500,8 +500,7 @@ impl SessionImpl {
 			.expect("session key is generated before signature is computed; we are in SignatureComputing state; qed")
 			.joint_public_and_secret()
 			.expect("session key is generated before signature is computed; we are in SignatureComputing state; qed")?;
-		let key_version = key_share.version(data.version.as_ref().ok_or(Error::InvalidMessage)?)
-			.map_err(|e| Error::KeyStorage(e.into()))?.hash.clone();
+		let key_version = key_share.version(data.version.as_ref().ok_or(Error::InvalidMessage)?)?.hash.clone();
 		let signing_job = SchnorrSigningJob::new_on_slave(self.core.meta.self_node_id.clone(), key_share.clone(), key_version, joint_public_and_secret.0, joint_public_and_secret.1)?;
 		let signing_transport = self.core.signing_transport();
 
@@ -735,7 +734,7 @@ impl SessionCore {
 			Some(key_share) => key_share,
 		};
 
-		let key_version = key_share.version(version).map_err(|e| Error::KeyStorage(e.into()))?.hash.clone();
+		let key_version = key_share.version(version)?.hash.clone();
 		let signing_job = SchnorrSigningJob::new_on_master(self.meta.self_node_id.clone(), key_share.clone(), key_version,
 			session_public, session_secret_share, message_hash)?;
 		consensus_session.disseminate_jobs(signing_job, self.signing_transport(), false).map(|_| ())

@@ -554,7 +554,7 @@ impl ClusterCore {
 		let is_initialization_message = message.is_initialization_message();
 		let is_delegation_message = message.is_delegation_message();
 		match is_initialization_message || is_delegation_message {
-			false => sessions.get(&session_id, true).ok_or(Error::InvalidSessionId),
+			false => sessions.get(&session_id, true).ok_or(Error::NoActiveSessionWithId),
 			true => {
 				let creation_data = SC::creation_data_from_message(&message)?;
 				let master = if is_initialization_message { sender.clone() } else { data.self_key_pair.public().clone() };
@@ -1374,11 +1374,11 @@ pub mod tests {
 		{
 			// try to start generation session => fail in initialization
 			assert_eq!(clusters[0].client().new_generation_session(SessionId::default(), Default::default(), Default::default(), 100).map(|_| ()),
-				Err(Error::InvalidThreshold));
+				Err(Error::NotEnoughNodesForThreshold));
 
 			// try to start generation session => fails in initialization
 			assert_eq!(clusters[0].client().new_generation_session(SessionId::default(), Default::default(), Default::default(), 100).map(|_| ()),
-				Err(Error::InvalidThreshold));
+				Err(Error::NotEnoughNodesForThreshold));
 
 			assert!(clusters[0].data.sessions.generation_sessions.is_empty());
 		}

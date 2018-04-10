@@ -70,7 +70,7 @@ use std::sync::Arc;
 use ethcore::client::Client;
 use ethsync::SyncProvider;
 
-pub use types::all::{ServerKeyId, EncryptedDocumentKey, RequestSignature, Public,
+pub use types::{ServerKeyId, EncryptedDocumentKey, RequestSignature, Public,
 	Error, NodeAddress, ContractAddress, ServiceConfiguration, ClusterConfiguration};
 pub use traits::{NodeKeyPair, KeyServer};
 pub use self::node_key_pair::{PlainNodeKeyPair, KeyStoreNodeKeyPair};

@@ -348,7 +348,7 @@ impl ServiceContractListener {
 	/// Store document key.
 	fn store_document_key(data: &Arc<ServiceContractListenerData>, origin: Address, server_key_id: &ServerKeyId, author: &Address, common_point: &Public, encrypted_point: &Public) -> Result<(), String> {
 		let store_result = data.key_storage.get(server_key_id)
-			.and_then(|key_share| key_share.ok_or(Error::DocumentNotFound))
+			.and_then(|key_share| key_share.ok_or(Error::ServerKeyIsNotFound))
 			.and_then(|key_share| check_encrypted_data(Some(&key_share)).map(|_| key_share).map_err(Into::into))
 			.and_then(|key_share| update_encrypted_data(&data.key_storage, server_key_id.clone(), key_share,
 				author.clone(), common_point.clone(), encrypted_point.clone()).map_err(Into::into));
@@ -371,11 +371,10 @@ impl ServiceContractListener {
 	fn retrieve_document_key_common(data: &Arc<ServiceContractListenerData>, origin: Address, server_key_id: &ServerKeyId, requester: &Address) -> Result<(), String> {
 		let retrieval_result = data.acl_storage.check(requester.clone(), server_key_id)
 			.and_then(|is_allowed| if !is_allowed { Err(Error::AccessDenied) } else { Ok(()) })
-			.and_then(|_| data.key_storage.get(server_key_id).and_then(|key_share| key_share.ok_or(Error::DocumentNotFound)))
+			.and_then(|_| data.key_storage.get(server_key_id).and_then(|key_share| key_share.ok_or(Error::ServerKeyIsNotFound)))
 			.and_then(|key_share| key_share.common_point
-				.ok_or(Error::DocumentNotFound)
-				.and_then(|common_point| math::make_common_shadow_point(key_share.threshold, common_point)
-					.map_err(|e| Error::Internal(e.into())))
+				.ok_or(Error::DocumentKeyIsNotFound)
+				.and_then(|common_point| math::make_common_shadow_point(key_share.threshold, common_point))
 				.map(|common_point| (common_point, key_share.threshold)));
 		match retrieval_result {
 			Ok((common_point, threshold)) => {

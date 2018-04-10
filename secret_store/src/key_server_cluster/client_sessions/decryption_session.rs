@@ -154,7 +154,7 @@ impl SessionImpl {
 		if let Some(key_share) = params.key_share.as_ref() {
 			// encrypted data must be set
 			if key_share.common_point.is_none() || key_share.encrypted_point.is_none() {
-				return Err(Error::NotStartedSessionId);
+				return Err(Error::DocumentKeyIsNotFound);
 			}
 		}
 
@@ -290,7 +290,7 @@ impl SessionImpl {
 		// check if version exists
 		let key_version = match self.core.key_share.as_ref() {
 			None => return Err(Error::InvalidMessage),
-			Some(key_share) => key_share.version(&version).map_err(|e| Error::KeyStorage(e.into()))?,
+			Some(key_share) => key_share.version(&version)?,
 		};
 
 		let mut data = self.data.lock();
@@ -432,8 +432,7 @@ impl SessionImpl {
 		};
 
 		let mut data = self.data.lock();
-		let key_version = key_share.version(data.version.as_ref().ok_or(Error::InvalidMessage)?)
-			.map_err(|e| Error::KeyStorage(e.into()))?.hash.clone();
+		let key_version = key_share.version(data.version.as_ref().ok_or(Error::InvalidMessage)?)?.hash.clone();
 		let requester_public = data.consensus_session.consensus_job().executor().requester()
 			.ok_or(Error::InvalidStateForRequest)?
 			.public(&self.core.meta.id)
@@ -601,7 +600,7 @@ impl SessionImpl {
 			Some(key_share) => key_share,
 		};
 
-		let key_version = key_share.version(version).map_err(|e| Error::KeyStorage(e.into()))?.hash.clone();
+		let key_version = key_share.version(version)?.hash.clone();
 		let requester = data.consensus_session.consensus_job().executor().requester().ok_or(Error::InvalidStateForRequest)?.clone();
 		let requester_public = requester.public(&core.meta.id).map_err(Error::InsufficientRequesterData)?;
 		let consensus_group = data.consensus_session.select_consensus_group()?.clone();

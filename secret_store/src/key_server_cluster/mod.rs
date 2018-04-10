@@ -18,10 +18,10 @@ use std::fmt;
 use std::io::Error as IoError;
 use ethkey;
 use ethcrypto;
-use super::types::all::ServerKeyId;
+use super::types::ServerKeyId;
 
 pub use super::traits::NodeKeyPair;
-pub use super::types::all::{NodeId, Requester, EncryptedDocumentKeyShadow};
+pub use super::types::{Error, NodeId, Requester, EncryptedDocumentKeyShadow};
 pub use super::acl_storage::AclStorage;
 pub use super::key_storage::{KeyStorage, DocumentKeyShare, DocumentKeyShareVersion};
 pub use super::key_server_set::{is_migration_required, KeyServerSet, KeyServerSetSnapshot, KeyServerSetMigration};
@@ -55,7 +55,7 @@ pub struct SessionMeta {
 	pub threshold: usize,
 }
 
-/// Errors which can occur during encryption/decryption session
+/*/// Errors which can occur during encryption/decryption session
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
 	/// Invalid node address has been passed.
@@ -174,7 +174,7 @@ impl Into<String> for Error {
 		format!("{}", self)
 	}
 }
-
+*/
 mod admin_sessions;
 mod client_sessions;
 
