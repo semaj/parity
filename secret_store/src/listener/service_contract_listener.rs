@@ -314,7 +314,7 @@ impl ServiceContractListener {
 			Ok(Some(server_key)) => {
 				data.contract.publish_generated_server_key(&origin, server_key_id, server_key)
 			},
-			Err(ref error) if is_internal_error(error) => Err(format!("{}", error)),
+			Err(ref error) if error.is_non_fatal() => Err(format!("{}", error)),
 			Err(ref error) => {
 				// ignore error as we're already processing an error
 				let _ = data.contract.publish_server_key_generation_error(&origin, server_key_id)
@@ -334,7 +334,7 @@ impl ServiceContractListener {
 			Ok(None) => {
 				data.contract.publish_server_key_retrieval_error(&origin, server_key_id)
 			}
-			Err(ref error) if is_internal_error(error) => Err(format!("{}", error)),
+			Err(ref error) if error.is_non_fatal() => Err(format!("{}", error)),
 			Err(ref error) => {
 				// ignore error as we're already processing an error
 				let _ = data.contract.publish_server_key_retrieval_error(&origin, server_key_id)
@@ -356,7 +356,7 @@ impl ServiceContractListener {
 			Ok(()) => {
 				data.contract.publish_stored_document_key(&origin, server_key_id)
 			},
-			Err(ref error) if is_internal_error(&error) => Err(format!("{}", error)),
+			Err(ref error) if error.is_non_fatal() => Err(format!("{}", error)),
 			Err(ref error) => {
 				// ignore error as we're already processing an error
 				let _ = data.contract.publish_document_key_store_error(&origin, server_key_id)
@@ -380,7 +380,7 @@ impl ServiceContractListener {
 			Ok((common_point, threshold)) => {
 				data.contract.publish_retrieved_document_key_common(&origin, server_key_id, requester, common_point, threshold)
 			},
-			Err(ref error) if is_internal_error(&error) => Err(format!("{}", error)),
+			Err(ref error) if error.is_non_fatal() => Err(format!("{}", error)),
 			Err(ref error) => {
 				// ignore error as we're already processing an error
 				let _ = data.contract.publish_document_key_retrieval_error(&origin, server_key_id, requester)
@@ -404,7 +404,7 @@ impl ServiceContractListener {
 			Ok(Some((participants, decrypted_secret, shadow))) => {
 				data.contract.publish_retrieved_document_key_personal(&origin, server_key_id, &requester, &participants, decrypted_secret, shadow)
 			},
-			Err(ref error) if is_internal_error(error) => Err(format!("{}", error)),
+			Err(ref error) if error.is_non_fatal() => Err(format!("{}", error)),
 			Err(ref error) => {
 				// ignore error as we're already processing an error
 				let _ = data.contract.publish_document_key_retrieval_error(&origin, server_key_id, &requester)
@@ -507,15 +507,6 @@ impl ::std::fmt::Display for ServiceTask {
 			ServiceTask::Shutdown => write!(f, "Shutdown"),
 		}
 	}
-}
-
-/// Is internal error? Internal error means that it is SS who's responsible for it, like: connectivity, db failure, ...
-/// External error is caused by SS misuse, like: trying to generate duplicated key, access denied, ...
-/// When internal error occurs, we just ignore request for now and will retry later.
-/// When external error occurs, we reject request.
-fn is_internal_error(_error: &Error) -> bool {
-	// TODO [Reliability]: implement me after proper is passed through network
-	false
 }
 
 /// Log service task result.

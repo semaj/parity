@@ -84,12 +84,47 @@ pub enum Error {
 	ServerKeyAlreadyGenerated,
 	/// Server key with this ID is not yet generated.
 	ServerKeyIsNotFound,
-	/// Server key version with this ID is not found.
-	ServerKeyVersionIsNotFound,
 	/// Document key with this ID is already stored.
 	DocumentKeyAlreadyStored,
 	/// Document key with this ID is not yet stored.
 	DocumentKeyIsNotFound,
+}
+
+impl Error {
+	/// Is this a fatal error? Non-fatal means that it is possible to replay the same request with a non-zero
+	/// chance to success. I.e. the error is not about request itself (or current environment factors that
+	/// are affecting request processing), but about current SecretStore state.
+	fn is_non_fatal(&self) -> bool {
+		match *self {
+			// non-fatal errors:
+
+			// session start errors => restarting session is a solution
+			Error::DuplicateSessionId | Error::NoActiveSessionWithId |
+			// unexpected message errors => restarting session/excluding node is a solution
+			Error::TooEarlyForRequest | Error::InvalidStateForRequest | Error::InvalidNodeForRequest |
+			// invalid message errors => restarting/updating/excluding node is a solution
+			Error::InvalidMessage | Error::InvalidMessageVersion | Error::ReplayProtection |
+			// connectivity problems => waiting for reconnect && restarting session is a solution
+			Error::NodeDisconnected |
+			// temporary (?) consensus problems, related to other non-fatal errors => restarting is probably (!) a solution
+			Error::ConsensusTemporaryUnreachable |
+			// exclusive session errors => waiting && restarting is a solution
+			Error::ExclusiveSessionActive | Error::HasActiveSessions => true,
+
+			// fatal errors:
+
+			// config-related errors
+			Error::InvalidNodeAddress | Error::InvalidNodeId |
+			// wrong session input params errors
+			Error::NotEnoughNodesForThreshold | Error::ServerKeyAlreadyGenerated | Error::ServerKeyIsNotFound |
+				Error::DocumentKeyAlreadyStored | Error::DocumentKeyIsNotFound | Error::InsufficientRequesterData(_) |
+			// access denied/consensus error
+			Error::AccessDenied | Error::ConsensusUnreachable |
+			// indeterminate internal errors, which could be either fatal (db failure, invalid request), or not (network error),
+			// but we still consider these errors as fatal
+			Error::EthKey(_) | Error::Serde(_) | Error::Hyper(_) | Error::Database(_) | Error::Internal(_) | Error::Io(_) => false,
+		}
+	}
 }
 
 impl fmt::Display for Error {
@@ -123,7 +158,6 @@ impl fmt::Display for Error {
 
 			Error::ServerKeyAlreadyGenerated => write!(f, "Server key with this ID is already generated"),
 			Error::ServerKeyIsNotFound => write!(f, "Server key with this ID is not found"),
-			Error::ServerKeyVersionIsNotFound => write!(f, "Server key version with this ID is not found"),
 			Error::DocumentKeyAlreadyStored => write!(f, "Document key with this ID is already stored"),
 			Error::DocumentKeyIsNotFound => write!(f, "Document key with this ID is not found"),
 		}
@@ -154,67 +188,8 @@ impl From<IoError> for Error {
 	}
 }
 
-/*impl From<key_server_cluster::Error> for Error {
-	fn from(err: key_server_cluster::Error) -> Self {
-		match err {
-			key_server_cluster::Error::InsufficientRequesterData(err)
-				=> Error::InsufficientRequesterData(err),
-			key_server_cluster::Error::ConsensusUnreachable
-				| key_server_cluster::Error::AccessDenied => Error::AccessDenied,
-			key_server_cluster::Error::MissingKeyShare => Error::DocumentNotFound,
-			_ => Error::Internal(err.into()),
-		}
-	}
-}*/
-
 impl Into<String> for Error {
 	fn into(self) -> String {
 		format!("{}", self)
-	}
-}
-
-
-impl Error {
-	/// Is this an internal error? Internal error means that it is SS who's responsible for it, like: connectivity, db failure, ...
-	/// External error is caused by SS misuse, like: trying to generate duplicated key, access denied, ...
-	/// When internal error occurs, it is possible that the same request will succeed after retry.
-	/// When external error occurs, we reject request.
-	fn is_internal_error(&self) -> bool {
-		match *self {
-			Error::InvalidNodeAddress => false,
-			Error::InvalidNodeId => false,
-			Error::DuplicateSessionId => true,
-			Error::NoActiveSessionWithId => true,
-			Error::NotEnoughNodesForThreshold => false,
-			Error::TooEarlyForRequest => true,
-			Error::InvalidStateForRequest => true,
-			Error::InvalidNodeForRequest => true,
-			Error::InvalidMessage => true,
-			Error::InvalidMessageVersion => true,
-			Error::ReplayProtection => true,
-			Error::NodeDisconnected => true,
-			Error::ConsensusUnreachable => false,
-			Error::ConsensusTemporaryUnreachable => true,
-			Error::AccessDenied => false,
-			Error::ExclusiveSessionActive => true,
-			Error::HasActiveSessions => true,
-			Error::InsufficientRequesterData(_) => false,
-
-			Error::EthKey(_) => false,
-			Error::Serde(_) => false,
-			Error::Hyper(_) => false,
-			Error::Database(_) => false,
-			Error::Internal(_) => false,
-			Error::Io(_) => false,
-
-			Error::ServerKeyAlreadyGenerated => false,
-			Error::ServerKeyIsNotFound => false,
-			Error::ServerKeyVersionIsNotFound => true,
-			Error::DocumentKeyAlreadyStored => false,
-			Error::DocumentKeyIsNotFound => false,
-		}
-
-		// TODO [Reliability]: implement me after proper is passed through network
-		//false
 	}
 }

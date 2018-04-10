@@ -185,7 +185,7 @@ impl<T> SessionImpl<T> where T: SessionTransport {
 	/// Return result computer reference.
 	pub fn version_holders(&self, version: &H256) -> Result<BTreeSet<NodeId>, Error> {
 		Ok(self.data.lock().versions.as_ref().ok_or(Error::InvalidStateForRequest)?
-			.get(version).ok_or(Error::ServerKeyVersionIsNotFound)?
+			.get(version).ok_or(Error::ServerKeyIsNotFound)?
 			.clone())
 	}
 
