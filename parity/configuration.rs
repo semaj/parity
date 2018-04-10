@@ -27,7 +27,7 @@ use ethereum_types::{U256, H256, Address};
 use parity_version::{version_data, version};
 use bytes::Bytes;
 use ansi_term::Colour;
-use ethsync::{NetworkConfiguration, validate_node_url, self};
+use sync::{NetworkConfiguration, validate_node_url, self};
 use ethcore::ethstore::ethkey::{Secret, Public};
 use ethcore::client::{VMType};
 use ethcore::miner::{MinerOptions, Banning, StratumOptions};
@@ -354,6 +354,7 @@ impl Configuration {
 				daemon: daemon,
 				logger_config: logger_config.clone(),
 				miner_options: self.miner_options()?,
+				work_notify: self.work_notify(),
 				gas_price_percentile: self.args.arg_gas_price_percentile,
 				ntp_servers: self.ntp_servers(),
 				ws_conf: ws_conf,
@@ -537,7 +538,6 @@ impl Configuration {
 		let reseal = self.args.arg_reseal_on_txs.parse::<ResealPolicy>()?;
 
 		let options = MinerOptions {
-			new_work_notify: self.work_notify(),
 			force_sealing: self.args.flag_force_sealing,
 			reseal_on_external_tx: reseal.external,
 			reseal_on_own_tx: reseal.own,
@@ -738,7 +738,7 @@ impl Configuration {
 				for line in &lines {
 					match validate_node_url(line).map(Into::into) {
 						None => continue,
-						Some(ethsync::ErrorKind::AddressResolve(_)) => return Err(format!("Failed to resolve hostname of a boot node: {}", line)),
+						Some(sync::ErrorKind::AddressResolve(_)) => return Err(format!("Failed to resolve hostname of a boot node: {}", line)),
 						Some(_) => return Err(format!("Invalid node address format given for a boot node: {}", line)),
 					}
 				}
@@ -1516,6 +1516,7 @@ mod tests {
 			no_hardcoded_sync: false,
 			no_persistent_txqueue: false,
 			whisper: Default::default(),
+			work_notify: Vec::new(),
 		};
 		expected.secretstore_conf.enabled = cfg!(feature = "secretstore");
 		expected.secretstore_conf.http_enabled = cfg!(feature = "secretstore");
