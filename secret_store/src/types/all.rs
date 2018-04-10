@@ -15,9 +15,8 @@
 // along with Parity.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::collections::BTreeMap;
-use serde_json;
 
-use {ethkey, ethcrypto, kvdb, bytes, ethereum_types, key_server_cluster};
+use {ethkey, bytes, ethereum_types};
 
 /// Node id.
 pub type NodeId = ethkey::Public;

@@ -19,9 +19,7 @@
 use std::fmt;
 use std::io::Error as IoError;
 
-use serde_json;
-
-use {ethkey, ethcrypto, kvdb, bytes, ethereum_types, key_server_cluster};
+use {ethkey, ethcrypto, kvdb};
 
 /// Secret store error.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -94,7 +92,7 @@ impl Error {
 	/// Is this a fatal error? Non-fatal means that it is possible to replay the same request with a non-zero
 	/// chance to success. I.e. the error is not about request itself (or current environment factors that
 	/// are affecting request processing), but about current SecretStore state.
-	fn is_non_fatal(&self) -> bool {
+	pub fn is_non_fatal(&self) -> bool {
 		match *self {
 			// non-fatal errors:
 

@@ -354,7 +354,7 @@ impl SessionImpl {
 			&GenerationMessage::PublicKeyShare(ref message) =>
 				self.on_public_key_share(sender.clone(), message),
 			&GenerationMessage::SessionError(ref message) => {
-				self.on_session_error(sender, (message.error.clone()));
+				self.on_session_error(sender, message.error.clone());
 				Ok(())
 			},
 			&GenerationMessage::SessionCompleted(ref message) =>
