@@ -349,7 +349,7 @@ impl SessionImpl {
 			&GenerationMessage::PublicKeyShare(ref message) =>
 				self.on_public_key_share(sender.clone(), message),
 			&GenerationMessage::SessionError(ref message) => {
-				self.on_session_error(sender, Error::Io(message.error.clone().into()));
+				self.on_session_error(sender, (message.error.clone()));
 				Ok(())
 			},
 			&GenerationMessage::SessionCompleted(ref message) =>
@@ -469,7 +469,7 @@ impl SessionImpl {
 
 		// simulate failure, if required
 		if data.simulate_faulty_behaviour {
-			return Err(Error::Io("simulated error".into()));
+			return Err(Error::Internal("simulated error".into()));
 		}
 
 		// check state

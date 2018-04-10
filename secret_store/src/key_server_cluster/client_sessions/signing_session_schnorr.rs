@@ -313,7 +313,7 @@ impl SessionImpl {
 			&SchnorrSigningMessage::SchnorrPartialSignature(ref message) =>
 				self.on_partial_signature(sender, message),
 			&SchnorrSigningMessage::SchnorrSigningSessionError(ref message) =>
-				self.process_node_error(Some(&sender), Error::Io(message.error.clone())),
+				self.process_node_error(Some(&sender), message.error.clone()),
 			&SchnorrSigningMessage::SchnorrSigningSessionCompleted(ref message) =>
 				self.on_session_completed(sender, message),
 			&SchnorrSigningMessage::SchnorrSigningSessionDelegation(ref message) =>

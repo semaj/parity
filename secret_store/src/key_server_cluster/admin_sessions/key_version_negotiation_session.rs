@@ -266,7 +266,7 @@ impl<T> SessionImpl<T> where T: SessionTransport {
 			&KeyVersionNegotiationMessage::KeyVersions(ref message) =>
 				self.on_key_versions(sender, message),
 			&KeyVersionNegotiationMessage::KeyVersionsError(ref message) => {
-				self.on_session_error(sender, Error::Io(message.error.clone()));
+				self.on_session_error(sender, message.error.clone());
 				Ok(())
 			},
 		}

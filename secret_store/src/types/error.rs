@@ -24,7 +24,7 @@ use serde_json;
 use {ethkey, ethcrypto, kvdb, bytes, ethereum_types, key_server_cluster};
 
 /// Secret store error.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Error {
 	/// Invalid node address has been passed.
 	InvalidNodeAddress,
@@ -108,7 +108,6 @@ impl fmt::Display for Error {
 			Error::ReplayProtection => write!(f, "replay message is received"),
 			Error::NodeDisconnected => write!(f, "node required for this operation is currently disconnected"),
 			Error::EthKey(ref e) => write!(f, "cryptographic error {}", e),
-			Error::Io(ref e) => write!(f, "i/o error {}", e),
 			Error::ConsensusUnreachable => write!(f, "Consensus unreachable"),
 			Error::ConsensusTemporaryUnreachable => write!(f, "Consensus temporary unreachable"),
 			Error::ExclusiveSessionActive => write!(f, "Exclusive session active"),
@@ -120,6 +119,7 @@ impl fmt::Display for Error {
 			Error::Serde(ref msg) => write!(f, "Serialization error: {}", msg),
 			Error::Database(ref msg) => write!(f, "Database error: {}", msg),
 			Error::Internal(ref msg) => write!(f, "Internal error: {}", msg),
+			Error::Io(ref msg) => write!(f, "IO error: {}", msg),
 
 			Error::ServerKeyAlreadyGenerated => write!(f, "Server key with this ID is already generated"),
 			Error::ServerKeyIsNotFound => write!(f, "Server key with this ID is not found"),
@@ -205,17 +205,7 @@ impl Error {
 			Error::Hyper(_) => false,
 			Error::Database(_) => false,
 			Error::Internal(_) => false,
-
-//
-
-			/// I/O error has occured.
-			Error::Io(_) => true,
-
-			/// Database-related error
-			/// Internal error
-
-
-//
+			Error::Io(_) => false,
 
 			Error::ServerKeyAlreadyGenerated => false,
 			Error::ServerKeyIsNotFound => false,

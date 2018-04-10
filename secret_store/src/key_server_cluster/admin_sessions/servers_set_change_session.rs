@@ -282,7 +282,7 @@ impl SessionImpl {
 			&ServersSetChangeMessage::ServersSetChangeShareAddMessage(ref message) =>
 				self.on_share_add_message(sender, message),
 			&ServersSetChangeMessage::ServersSetChangeError(ref message) => {
-				self.on_session_error(sender, Error::Io(message.error.clone()));
+				self.on_session_error(sender, message.error.clone());
 				Ok(())
 			},
 			&ServersSetChangeMessage::ServersSetChangeCompleted(ref message) => 

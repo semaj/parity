@@ -652,7 +652,7 @@ impl ClusterConnections {
 		let trigger: Box<ConnectionTrigger> = match config.auto_migrate_enabled {
 			false => Box::new(SimpleConnectionTrigger::new(config.key_server_set.clone(), config.self_key_pair.clone(), config.admin_public.clone())),
 			true if config.admin_public.is_none() => Box::new(ConnectionTriggerWithMigration::new(config.key_server_set.clone(), config.self_key_pair.clone())),
-			true => return Err(Error::Io("secret store admininstrator public key is specified with auto-migration enabled".into())), // TODO [Refac]: Io -> Internal
+			true => return Err(Error::Internal("secret store admininstrator public key is specified with auto-migration enabled".into())),
 		};
 		let connector = trigger.servers_set_change_creator_connector();
 
@@ -1134,7 +1134,7 @@ pub mod tests {
 		fn cluster_state(&self) -> ClusterState { unimplemented!("test-only") }
 		fn new_generation_session(&self, _session_id: SessionId, _origin: Option<Address>, _author: Address, _threshold: usize) -> Result<Arc<GenerationSession>, Error> {
 			self.generation_requests_count.fetch_add(1, Ordering::Relaxed);
-			Err(Error::Io("test-errror".into()))
+			Err(Error::Internal("test-error".into()))
 		}
 		fn new_encryption_session(&self, _session_id: SessionId, _requester: Requester, _common_point: Public, _encrypted_point: Public) -> Result<Arc<EncryptionSession>, Error> { unimplemented!("test-only") }
 		fn new_decryption_session(&self, _session_id: SessionId, _origin: Option<Address>, _requester: Requester, _version: Option<H256>, _is_shadow_decryption: bool, _is_broadcast_session: bool) -> Result<Arc<DecryptionSession>, Error> { unimplemented!("test-only") }

@@ -337,7 +337,7 @@ impl SessionImpl {
 			&DecryptionMessage::PartialDecryption(ref message) =>
 				self.on_partial_decryption(sender, message),
 			&DecryptionMessage::DecryptionSessionError(ref message) =>
-				self.process_node_error(Some(&sender), Error::Io(message.error.clone())),
+				self.process_node_error(Some(&sender), message.error.clone()),
 			&DecryptionMessage::DecryptionSessionCompleted(ref message) =>
 				self.on_session_completed(sender, message),
 			&DecryptionMessage::DecryptionSessionDelegation(ref message) =>

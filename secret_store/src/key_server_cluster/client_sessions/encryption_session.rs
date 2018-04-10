@@ -306,7 +306,7 @@ impl ClusterSession for SessionImpl {
 				&EncryptionMessage::ConfirmEncryptionInitialization(ref message) =>
 					self.on_confirm_initialization(sender.clone(), message),
 				&EncryptionMessage::EncryptionSessionError(ref message) => {
-					self.on_session_error(sender, Error::Io(message.error.clone().into()));
+					self.on_session_error(sender, message.error.clone());
 					Ok(())
 				},
 			},

@@ -311,7 +311,7 @@ impl SessionImpl {
 			&EcdsaSigningMessage::EcdsaPartialSignature(ref message) =>
 				self.on_partial_signature(sender, message),
 			&EcdsaSigningMessage::EcdsaSigningSessionError(ref message) =>
-				self.process_node_error(Some(&sender), Error::Io(message.error.clone())),
+				self.process_node_error(Some(&sender), message.error.clone()),
 			&EcdsaSigningMessage::EcdsaSigningSessionCompleted(ref message) =>
 				self.on_session_completed(sender, message),
 			&EcdsaSigningMessage::EcdsaSigningSessionDelegation(ref message) =>

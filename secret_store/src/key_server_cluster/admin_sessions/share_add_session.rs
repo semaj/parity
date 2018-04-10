@@ -324,7 +324,7 @@ impl<T> SessionImpl<T> where T: SessionTransport {
 			&ShareAddMessage::NewKeysDissemination(ref message) =>
 				self.on_new_keys_dissemination(sender, message),
 			&ShareAddMessage::ShareAddError(ref message) => {
-				self.on_session_error(sender, Error::Io(message.error.clone().into()));
+				self.on_session_error(sender, message.error.clone());
 				Ok(())
 			},
 		}
