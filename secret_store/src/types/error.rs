@@ -1,5 +1,3 @@
-// TODO: if connected to all configured nodes => consensus unreachable, else => temporary unreachable
-
 // Copyright 2015-2017 Parity Technologies (UK) Ltd.
 // This file is part of Parity.
 
@@ -52,12 +50,14 @@ pub enum Error {
 	ReplayProtection,
 	/// Connection to node, required for this session is not established.
 	NodeDisconnected,
-	/// Cryptographic error.
-	EthKey(String),
-	/// I/O error has occured.
-	Io(String),
-	/// Deserialization error has occured.
-	Serde(String),
+	/// Server key with this ID is already generated.
+	ServerKeyAlreadyGenerated,
+	/// Server key with this ID is not yet generated.
+	ServerKeyIsNotFound,
+	/// Document key with this ID is already stored.
+	DocumentKeyAlreadyStored,
+	/// Document key with this ID is not yet stored.
+	DocumentKeyIsNotFound,
 	/// Consensus is temporary unreachable. Means that something is currently blocking us from either forming
 	/// consensus group (like disconnecting from too many nodes, which are AGREE to partticipate in consensus)
 	/// or from rejecting request (disconnecting from AccessDenied-nodes).
@@ -73,24 +73,20 @@ pub enum Error {
 	ExclusiveSessionActive,
 	/// Can't start exclusive session, because there are other active sessions.
 	HasActiveSessions,
-
-	/// Insufficient requester data
+	/// Insufficient requester data.
 	InsufficientRequesterData(String),
-	/// Hyper error
+	/// Cryptographic error.
+	EthKey(String),
+	/// I/O error has occured.
+	Io(String),
+	/// Deserialization error has occured.
+	Serde(String),
+	/// Hyper error.
 	Hyper(String),
-	/// Database-related error
+	/// Database-related error.
 	Database(String),
-	/// Internal error
+	/// Internal error.
 	Internal(String),
-
-	/// Server key with this ID is already generated.
-	ServerKeyAlreadyGenerated,
-	/// Server key with this ID is not yet generated.
-	ServerKeyIsNotFound,
-	/// Document key with this ID is already stored.
-	DocumentKeyAlreadyStored,
-	/// Document key with this ID is not yet stored.
-	DocumentKeyIsNotFound,
 }
 
 impl Error {
@@ -145,24 +141,22 @@ impl fmt::Display for Error {
 			Error::InvalidMessageVersion => write!(f, "unsupported message is received"),
 			Error::ReplayProtection => write!(f, "replay message is received"),
 			Error::NodeDisconnected => write!(f, "node required for this operation is currently disconnected"),
-			Error::EthKey(ref e) => write!(f, "cryptographic error {}", e),
+			Error::ServerKeyAlreadyGenerated => write!(f, "Server key with this ID is already generated"),
+			Error::ServerKeyIsNotFound => write!(f, "Server key with this ID is not found"),
+			Error::DocumentKeyAlreadyStored => write!(f, "Document key with this ID is already stored"),
+			Error::DocumentKeyIsNotFound => write!(f, "Document key with this ID is not found"),
 			Error::ConsensusUnreachable => write!(f, "Consensus unreachable"),
 			Error::ConsensusTemporaryUnreachable => write!(f, "Consensus temporary unreachable"),
+			Error::AccessDenied => write!(f, "Access dened"),
 			Error::ExclusiveSessionActive => write!(f, "Exclusive session active"),
 			Error::HasActiveSessions => write!(f, "Unable to start exclusive session"),
-
 			Error::InsufficientRequesterData(ref e) => write!(f, "Insufficient requester data: {}", e),
-			Error::AccessDenied => write!(f, "Access dened"),
+			Error::EthKey(ref e) => write!(f, "cryptographic error {}", e),
 			Error::Hyper(ref msg) => write!(f, "Hyper error: {}", msg),
 			Error::Serde(ref msg) => write!(f, "Serialization error: {}", msg),
 			Error::Database(ref msg) => write!(f, "Database error: {}", msg),
 			Error::Internal(ref msg) => write!(f, "Internal error: {}", msg),
 			Error::Io(ref msg) => write!(f, "IO error: {}", msg),
-
-			Error::ServerKeyAlreadyGenerated => write!(f, "Server key with this ID is already generated"),
-			Error::ServerKeyIsNotFound => write!(f, "Server key with this ID is not found"),
-			Error::DocumentKeyAlreadyStored => write!(f, "Document key with this ID is already stored"),
-			Error::DocumentKeyIsNotFound => write!(f, "Document key with this ID is not found"),
 		}
 	}
 }
