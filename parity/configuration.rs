@@ -85,6 +85,7 @@ pub enum Cmd {
 	Snapshot(SnapshotCommand),
 	Hash(Option<String>),
 	ExportHardcodedSync(ExportHsyncCmd),
+	TransactionSimulation(SnapshotCommand),
 }
 
 pub struct Execute {
@@ -323,6 +324,23 @@ impl Configuration {
 				block_at: to_block_id("latest")?, // unimportant.
 			};
 			Cmd::Snapshot(restore_cmd)
+		} else if self.args.cmd_transaction_simulation {
+			let restore_cmd = SnapshotCommand {
+				cache_config: cache_config,
+				dirs: dirs,
+				spec: spec,
+				pruning: pruning,
+				pruning_history: pruning_history,
+				pruning_memory: self.args.arg_pruning_memory,
+				tracing: tracing,
+				fat_db: fat_db,
+				compaction: compaction,
+				file_path: self.args.arg_start_snapshot.clone(),
+				wal: wal,
+				kind: snapshot::Kind::Restore,
+				block_at: to_block_id("latest")?, // unimportant.
+			};
+			Cmd::TransactionSimulation(restore_cmd)
 		} else if self.args.cmd_export_hardcoded_sync {
 			let export_hs_cmd = ExportHsyncCmd {
 				cache_config: cache_config,

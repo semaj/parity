@@ -105,26 +105,36 @@ pub fn run_transaction<T: Informant>(
 
 	informant.set_gas(env_info.gas_limit);
 
-	let result = run(spec, env_info.gas_limit, pre_state, |mut client| {
-		let result = client.transact(env_info, transaction, trace::NoopTracer, informant);
-		match result {
-			TransactResult::Ok { state_root, .. } if state_root != post_root => {
-				(Err(EvmTestError::PostCondition(format!(
-					"State root mismatch (got: {}, expected: {})",
-					state_root,
-					post_root,
-				))), None)
-			},
-			TransactResult::Ok { state_root, gas_left, output, vm_trace, .. } => {
-				(Ok((state_root, gas_left, output)), vm_trace)
-			},
-			TransactResult::Err { error, .. } => {
-				(Err(EvmTestError::PostCondition(format!(
-					"Unexpected execution error: {:?}", error
-				))), None)
-			},
-		}
-	});
+	let result = run(
+		spec,
+		env_info.gas_limit,
+		pre_state,
+		|mut client| {
+			let result = client.transact(
+				env_info,
+				transaction,
+				trace::NoopTracer,
+				informant
+			);
+			match result {
+                TransactResult::Ok { state_root, .. } if state_root != post_root => {
+                    (Err(EvmTestError::PostCondition(format!(
+                        "State root mismatch (got: {}, expected: {})",
+                        state_root,
+                        post_root,
+                    ))), None)
+                },
+                TransactResult::Ok { state_root, gas_left, output, vm_trace, .. } => {
+                    (Ok((state_root, gas_left, output)), vm_trace)
+                },
+                TransactResult::Err { error, .. } => {
+                    (Err(EvmTestError::PostCondition(format!(
+                        "Unexpected execution error: {:?}", error
+                    ))), None)
+                },
+            }
+        }
+	);
 
 	T::finish(result)
 }

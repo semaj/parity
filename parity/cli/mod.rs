@@ -236,6 +236,14 @@ usage! {
 		{
 			"Export the hardcoded sync JSON file from the existing light client database",
 		}
+
+		CMD cmd_transaction_simulation
+		{
+			"Submit one transaction at a time, to be applied to the current state.",
+			ARG arg_start_snapshot: (Option<String>) = None,
+			"[FILE]",
+			"Path to the snapshot from which simulation should start",
+		}
 	}
 	{
 		// Global flags and arguments

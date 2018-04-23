@@ -126,6 +126,7 @@ mod upgrade;
 mod url;
 mod user_defaults;
 mod whisper;
+mod simulation;
 
 #[cfg(feature="stratum")]
 mod stratum;
@@ -177,6 +178,7 @@ fn execute(command: Execute, can_restart: bool) -> Result<PostExecutionAction, S
 		Cmd::SignerReject { id, port, authfile } => rpc_cli::signer_reject(id, port, authfile).map(|s| PostExecutionAction::Print(s)),
 		Cmd::Snapshot(snapshot_cmd) => snapshot::execute(snapshot_cmd).map(|s| PostExecutionAction::Print(s)),
 		Cmd::ExportHardcodedSync(export_hs_cmd) => export_hardcoded_sync::execute(export_hs_cmd).map(|s| PostExecutionAction::Print(s)),
+		Cmd::TransactionSimulation(restore_cmd)  => simulation::execute(restore_cmd).map( |s| PostExecutionAction::Print(s)),
 	}
 }
 
