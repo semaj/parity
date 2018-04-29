@@ -3,11 +3,10 @@ use ethcore::executive::{Executive, TransactOptions};
 use rlp;
 use snapshot::SnapshotCommand;
 use std::io::{self, BufRead};
-use std::sync::Arc;
 use transaction::SignedTransaction;
 
 pub fn execute(cmd: SnapshotCommand) -> Result<String, String> {
-	let service = cmd.restore().unwrap();
+	let service = cmd.start_service().unwrap();
 	let client = service.client();
 	let mut state = client.latest_state();
 	let env_info = client.env_info(BlockId::Latest).unwrap();
@@ -20,7 +19,11 @@ pub fn execute(cmd: SnapshotCommand) -> Result<String, String> {
 			.dont_check_nonce()
 			.save_output_from_contract();
 		let mut executive = Executive::new(&mut state, &env_info, client.engine().machine());
-		executive.transact_virtual(&transaction, options).unwrap();
+		match executive.transact_virtual(&transaction, options) {
+			Ok(_) => (),
+			Err(_) => (),
+		}
+		println!("ok");
 	}
 	return Ok(String::new());
 }

@@ -16,24 +16,21 @@
 
 //! Creates and registers client and network services.
 
-use std::sync::Arc;
-use std::path::Path;
-
-use ansi_term::Colour;
-use io::{IoContext, TimerToken, IoHandler, IoService, IoError};
-use kvdb::{KeyValueDB, KeyValueDBHandler};
-use stop_guard::StopGuard;
-
-use sync::PrivateTxHandler;
-use ethcore::client::{Client, ClientConfig, ChainNotify, ClientIoMessage};
-use ethcore::miner::Miner;
-use ethcore::snapshot::service::{Service as SnapshotService, ServiceParams as SnapServiceParams};
-use ethcore::snapshot::{RestorationStatus};
-use ethcore::spec::Spec;
-use ethcore::account_provider::AccountProvider;
-
-use ethcore_private_tx;
 use Error;
+use ansi_term::Colour;
+use ethcore::account_provider::AccountProvider;
+use ethcore::client::{ChainNotify, Client, ClientConfig, ClientIoMessage};
+use ethcore::miner::Miner;
+use ethcore::snapshot::RestorationStatus;
+use ethcore::snapshot::service::{Service as SnapshotService, ServiceParams as SnapServiceParams};
+use ethcore::spec::Spec;
+use ethcore_private_tx;
+use io::{IoContext, IoError, IoHandler, IoService, TimerToken};
+use kvdb::{KeyValueDB, KeyValueDBHandler};
+use std::path::Path;
+use std::sync::Arc;
+use stop_guard::StopGuard;
+use sync::PrivateTxHandler;
 
 pub struct PrivateTxService {
 	provider: Arc<ethcore_private_tx::Provider>,
@@ -41,9 +38,7 @@ pub struct PrivateTxService {
 
 impl PrivateTxService {
 	fn new(provider: Arc<ethcore_private_tx::Provider>) -> Self {
-		PrivateTxService {
-			provider,
-		}
+		PrivateTxService { provider }
 	}
 
 	/// Returns underlying provider.
@@ -54,11 +49,15 @@ impl PrivateTxService {
 
 impl PrivateTxHandler for PrivateTxService {
 	fn import_private_transaction(&self, rlp: &[u8]) -> Result<(), String> {
-		self.provider.import_private_transaction(rlp).map_err(|e| e.to_string())
+		self.provider
+			.import_private_transaction(rlp)
+			.map_err(|e| e.to_string())
 	}
 
 	fn import_signed_private_transaction(&self, rlp: &[u8]) -> Result<(), String> {
-		self.provider.import_signed_private_transaction(rlp).map_err(|e| e.to_string())
+		self.provider
+			.import_signed_private_transaction(rlp)
+			.map_err(|e| e.to_string())
 	}
 }
 
@@ -85,14 +84,19 @@ impl ClientService {
 		account_provider: Arc<AccountProvider>,
 		encryptor: Box<ethcore_private_tx::Encryptor>,
 		private_tx_conf: ethcore_private_tx::ProviderConfig,
-		) -> Result<ClientService, Error>
-	{
+	) -> Result<ClientService, Error> {
 		let io_service = IoService::<ClientIoMessage>::start()?;
 
-		info!("Configured for {} using {} engine", Colour::White.bold().paint(spec.name.clone()), Colour::Yellow.bold().paint(spec.engine.name()));
+		//info!("Configured for {} using {} engine", Colour::White.bold().paint(spec.name.clone()), Colour::Yellow.bold().paint(spec.engine.name()));
 
 		let pruning = config.pruning;
-		let client = Client::new(config, &spec, client_db.clone(), miner, io_service.channel())?;
+		let client = Client::new(
+			config,
+			&spec,
+			client_db.clone(),
+			miner,
+			io_service.channel(),
+		)?;
 
 		let snapshot_params = SnapServiceParams {
 			engine: spec.engine.clone(),
@@ -105,7 +109,13 @@ impl ClientService {
 		};
 		let snapshot = Arc::new(SnapshotService::new(snapshot_params)?);
 
-		let provider = Arc::new(ethcore_private_tx::Provider::new(client.clone(), account_provider, encryptor, private_tx_conf, io_service.channel())?);
+		let provider = Arc::new(ethcore_private_tx::Provider::new(
+			client.clone(),
+			account_provider,
+			encryptor,
+			private_tx_conf,
+			io_service.channel(),
+		)?);
 		let private_tx = Arc::new(PrivateTxService::new(provider));
 
 		let client_io = Arc::new(ClientIoHandler {
@@ -130,7 +140,10 @@ impl ClientService {
 	}
 
 	/// Get general IO interface
-	pub fn register_io_handler(&self, handler: Arc<IoHandler<ClientIoMessage> + Send>) -> Result<(), IoError> {
+	pub fn register_io_handler(
+		&self,
+		handler: Arc<IoHandler<ClientIoMessage> + Send>,
+	) -> Result<(), IoError> {
 		self.io_service.register_handler(handler)
 	}
 
@@ -160,7 +173,9 @@ impl ClientService {
 	}
 
 	/// Get a handle to the database.
-	pub fn db(&self) -> Arc<KeyValueDB> { self.database.clone() }
+	pub fn db(&self) -> Arc<KeyValueDB> {
+		self.database.clone()
+	}
 }
 
 /// IO interface for the Client handler
@@ -178,17 +193,24 @@ const SNAPSHOT_TICK_MS: u64 = 10000;
 
 impl IoHandler<ClientIoMessage> for ClientIoHandler {
 	fn initialize(&self, io: &IoContext<ClientIoMessage>) {
-		io.register_timer(CLIENT_TICK_TIMER, CLIENT_TICK_MS).expect("Error registering client timer");
-		io.register_timer(SNAPSHOT_TICK_TIMER, SNAPSHOT_TICK_MS).expect("Error registering snapshot timer");
+		io.register_timer(CLIENT_TICK_TIMER, CLIENT_TICK_MS)
+			.expect("Error registering client timer");
+		io.register_timer(SNAPSHOT_TICK_TIMER, SNAPSHOT_TICK_MS)
+			.expect("Error registering snapshot timer");
 	}
 
 	fn timeout(&self, _io: &IoContext<ClientIoMessage>, timer: TimerToken) {
 		match timer {
 			CLIENT_TICK_TIMER => {
 				use ethcore::snapshot::SnapshotService;
-				let snapshot_restoration = if let RestorationStatus::Ongoing{..} = self.snapshot.status() { true } else { false };
+				let snapshot_restoration =
+					if let RestorationStatus::Ongoing { .. } = self.snapshot.status() {
+						true
+					} else {
+						false
+					};
 				self.client.tick(snapshot_restoration)
-			},
+			}
 			SNAPSHOT_TICK_TIMER => self.snapshot.tick(),
 			_ => warn!("IO service triggered unregistered timer '{}'", timer),
 		}
@@ -198,37 +220,50 @@ impl IoHandler<ClientIoMessage> for ClientIoHandler {
 		use std::thread;
 
 		match *net_message {
-			ClientIoMessage::BlockVerified => { self.client.import_verified_blocks(); }
+			ClientIoMessage::BlockVerified => {
+				self.client.import_verified_blocks();
+			}
 			ClientIoMessage::NewTransactions(ref transactions, peer_id) => {
-				self.client.import_queued_transactions(transactions, peer_id);
+				self.client
+					.import_queued_transactions(transactions, peer_id);
 			}
 			ClientIoMessage::BeginRestoration(ref manifest) => {
 				if let Err(e) = self.snapshot.init_restore(manifest.clone(), true) {
 					warn!("Failed to initialize snapshot restoration: {}", e);
 				}
 			}
-			ClientIoMessage::FeedStateChunk(ref hash, ref chunk) => self.snapshot.feed_state_chunk(*hash, chunk),
-			ClientIoMessage::FeedBlockChunk(ref hash, ref chunk) => self.snapshot.feed_block_chunk(*hash, chunk),
+			ClientIoMessage::FeedStateChunk(ref hash, ref chunk) => {
+				self.snapshot.feed_state_chunk(*hash, chunk)
+			}
+			ClientIoMessage::FeedBlockChunk(ref hash, ref chunk) => {
+				self.snapshot.feed_block_chunk(*hash, chunk)
+			}
 			ClientIoMessage::TakeSnapshot(num) => {
 				let client = self.client.clone();
 				let snapshot = self.snapshot.clone();
 
-				let res = thread::Builder::new().name("Periodic Snapshot".into()).spawn(move || {
-					if let Err(e) = snapshot.take_snapshot(&*client, num) {
-						warn!("Failed to take snapshot at block #{}: {}", num, e);
-					}
-				});
+				let res = thread::Builder::new()
+					.name("Periodic Snapshot".into())
+					.spawn(move || {
+						if let Err(e) = snapshot.take_snapshot(&*client, num) {
+							warn!("Failed to take snapshot at block #{}: {}", num, e);
+						}
+					});
 
 				if let Err(e) = res {
 					debug!(target: "snapshot", "Failed to initialize periodic snapshot thread: {:?}", e);
 				}
-			},
-			ClientIoMessage::NewMessage(ref message) => if let Err(e) = self.client.engine().handle_message(message) {
-				trace!(target: "poa", "Invalid message received: {}", e);
-			},
-			ClientIoMessage::NewPrivateTransaction => if let Err(e) = self.private_tx.provider.on_private_transaction_queued() {
-				warn!("Failed to handle private transaction {:?}", e);
-			},
+			}
+			ClientIoMessage::NewMessage(ref message) => {
+				if let Err(e) = self.client.engine().handle_message(message) {
+					trace!(target: "poa", "Invalid message received: {}", e);
+				}
+			}
+			ClientIoMessage::NewPrivateTransaction => {
+				if let Err(e) = self.private_tx.provider.on_private_transaction_queued() {
+					warn!("Failed to handle private transaction {:?}", e);
+				}
+			}
 			_ => {} // ignore other messages
 		}
 	}
@@ -236,21 +271,18 @@ impl IoHandler<ClientIoMessage> for ClientIoHandler {
 
 #[cfg(test)]
 mod tests {
-	use std::sync::Arc;
-	use std::{time, thread};
-
-	use tempdir::TempDir;
-
+	use super::*;
 	use ethcore::account_provider::AccountProvider;
 	use ethcore::client::ClientConfig;
+	use ethcore::db::NUM_COLUMNS;
 	use ethcore::miner::Miner;
 	use ethcore::spec::Spec;
-	use ethcore::db::NUM_COLUMNS;
-	use kvdb::Error;
-	use kvdb_rocksdb::{Database, DatabaseConfig, CompactionProfile};
-	use super::*;
-
 	use ethcore_private_tx;
+	use kvdb::Error;
+	use kvdb_rocksdb::{CompactionProfile, Database, DatabaseConfig};
+	use std::{thread, time};
+	use std::sync::Arc;
+	use tempdir::TempDir;
 
 	#[test]
 	fn it_can_be_started() {
@@ -265,10 +297,14 @@ mod tests {
 		client_db_config.compaction = CompactionProfile::auto(&client_path);
 		client_db_config.wal = client_config.db_wal;
 
-		let client_db = Arc::new(Database::open(
-			&client_db_config,
-			&client_path.to_str().expect("DB path could not be converted to string.")
-		).unwrap());
+		let client_db = Arc::new(
+			Database::open(
+				&client_db_config,
+				&client_path
+					.to_str()
+					.expect("DB path could not be converted to string."),
+			).unwrap(),
+		);
 
 		struct RestorationDBHandler {
 			config: DatabaseConfig,
@@ -276,7 +312,10 @@ mod tests {
 
 		impl KeyValueDBHandler for RestorationDBHandler {
 			fn open(&self, db_path: &Path) -> Result<Arc<KeyValueDB>, Error> {
-				Ok(Arc::new(Database::open(&self.config, &db_path.to_string_lossy())?))
+				Ok(Arc::new(Database::open(
+					&self.config,
+					&db_path.to_string_lossy(),
+				)?))
 			}
 		}
 
@@ -295,7 +334,7 @@ mod tests {
 			Arc::new(Miner::with_spec(&spec)),
 			Arc::new(AccountProvider::transient_provider()),
 			Box::new(ethcore_private_tx::NoopEncryptor),
-			Default::default()
+			Default::default(),
 		);
 		assert!(service.is_ok());
 		drop(service.unwrap());
